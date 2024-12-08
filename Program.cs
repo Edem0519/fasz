@@ -69,7 +69,7 @@ namespace Beadando_Szenzorhalozat
         } //1. linq lekérdezés - ez rendben van...
         static void JSON()
         {
-            string json = JsonConvert.SerializeObject(list, Formatting.Indented);
+            string json = JsonConvert.SerializeObject(list, Newtonsoft.Json.Formatting.Indented);
             StreamWriter sw = new StreamWriter("json_adatok.txt"); //mérési adatok => JSON fájl
             sw.WriteLine(json); sw.Flush(); sw.Close();
         } //JSON fájl
