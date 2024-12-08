@@ -10,6 +10,9 @@ namespace fasz
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("idkj");
+
+            Console.ReadKey(); 
         }
     }
 }
