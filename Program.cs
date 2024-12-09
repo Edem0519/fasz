@@ -12,77 +12,140 @@ namespace Beadando_Szenzorhalozat
     class Sensorok
     {
         //privát adattagok az egységbezárás és az adatok védelme miatt
-        private int homerseklet, valami, azon;
+        private int homerseklet, paratartalom, folyoszint, tartalyszint, allapot,azon;
         //hogy elérje a többi osztály és lehessen dolgozni velük, tulajdonság függvények létrehozása
         public int Homerseklet
-        {
-            get; set;
-        }
-        public int Valami
-        {
-            get; set;
-        }
+        {get; set;}
+        public int Paratartalom
+        {get; set;}
+        public int Folyoszint
+        { get; set;}
+        public int Tartalyszint
+        { get; set;}
         public int Azon
-        {
-            get; set;
-        }
+        {get; set;}
         //konstruktor
-        public Sensorok(int azon, int homerseklet, int valami)
+        public Sensorok(int azon, int homerseklet, int paratartalom, int folyoszint, int tartalyszint)
         {
             Azon = azon;
             Homerseklet = homerseklet;
-            Valami = valami;
+            Paratartalom = paratartalom;
+            Folyoszint = folyoszint;
+            Tartalyszint = tartalyszint;
         }
         public override string ToString() //hogy kiírja a konkrét mérési eredményeket, az ellenőrző kiíratás során
         {
-            return $"Azonosító: {Azon}, Hőmérséklet: {Homerseklet}°C, Valami: {Valami}";
+            return $"Azonosító: {Azon}, Hőmérséklet: {Homerseklet}°C, Páratartalom: {Paratartalom}%, Folyószint: {Folyoszint}m, Tartályszint: {Tartalyszint}cm";
         }
     }
     internal class Program
     {
+        public static event EventHandler JSON_FILE;
+        static void OnFileWritten(EventArgs e)
+        {
+            // Eseménykezelő meghívása
+            JSON_FILE?.Invoke(null, e);
+        }
+        static void FileWrittenHandler(object sender, EventArgs e)
+        {
+            Console.WriteLine("A fájl sikeresen ki lett írva!");
+        }
+        static Program()
+        {
+            // Regisztráljuk az eseménykezelőt
+            JSON_FILE += FileWrittenHandler;
+        }
         static List<Sensorok> list = new List<Sensorok>();
         static void Results()
         {
-            Random rnd = new Random(); //Random number generator
-                                       //Ebben tároljuk a sensorokat
-            int i = 0; //ezzel léptetjük és állítjuk a ciklust meg
-            int x = 0; //azonositó counter basically
-            while (i < 20) //20 sensor példány készítése
+            string filePath = "adatok.txt"; // Szöveges fájl elérési útja
+            if (File.Exists(filePath))
             {
-                list.Add(new Sensorok(x + 1, rnd.Next(30, 100), rnd.Next(30, 100))); //objektum példányosítás és hozzáadása a listához
-                i++;
-                x++;
+                var lines = File.ReadAllLines(filePath); // Beolvassa a fájl sorait
+                foreach (var line in lines)
+                {
+                    var parts = line.Split(' '); // Szóközök mentén szétválasztja az adatokat
+                    if (parts.Length == 5)
+                    {
+                        // Adatok konvertálása és objektum hozzáadása a listához
+                        int azon = int.Parse(parts[0]);
+                        int homerseklet = int.Parse(parts[1]);
+                        int paratartalom = int.Parse(parts[2]);
+                        int folyoszint = int.Parse(parts[3]);
+                        int tartalyszint = int.Parse(parts[4]);
+
+                        list.Add(new Sensorok(azon, homerseklet, paratartalom, folyoszint, tartalyszint));
+                    }
+                }
+                /*foreach (var sensorok in list) //ellenőrzés képpen
+                {
+                    Console.WriteLine(sensorok);
+                }*/
             }
-            /*foreach (var sensorok in list) //ellenőrzés képpen
-            {
-                Console.WriteLine(sensorok);
-            }*/
-        } //Mérési adatok generálása - majd fájlból olvasás fog kelleni!!!
-        static void LINQ_1()
-        {
-            Console.WriteLine("A mérőpontok és azok eredményei ahol a hőmérséklet 50°C fölé ment...");
-            var result = from m in list
-                         where m.Homerseklet > 50
-                         select m;
-            foreach (var m in result)
-                Console.WriteLine(m);
-        } //1. linq lekérdezés - ez rendben van...
+        }//fájl-ból beolvasás
         static void JSON()
         {
             string json = JsonConvert.SerializeObject(list, Newtonsoft.Json.Formatting.Indented);
-            StreamWriter sw = new StreamWriter("json_adatok.txt"); //mérési adatok => JSON fájl
-            sw.WriteLine(json); sw.Flush(); sw.Close();
+            try
+            {
+                StreamWriter sw = new StreamWriter("json_adatok.txt"); //mérési adatok => JSON fájl
+                sw.WriteLine(json);
+                sw.Flush();
+                sw.Close();
+
+                // Ha sikerült a fájl írása, aktiváljuk az eseményt
+                OnFileWritten(EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Hiba történt a fájl írása során: {ex.Message}");
+            }
         } //JSON fájl
+        static void LINQ_1()
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Az alábbi órákban narancssárga riasztás volt érvényben");
+            Console.ResetColor();
+            var result = from t in list
+                         where t.Homerseklet > 35
+                         select t;
+            foreach (var t in result)
+                Console.WriteLine($"Óra: {t.Azon} Hőmérséklet: {t.Homerseklet}");
+        } //1. linq lekérdezés - ez rendben van...
+        static void LINQ_2()
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Az alábbi órákban magas volt a páratartalom:");
+            Console.ResetColor();
+            var result = from p in list
+                         where 60 <= p.Paratartalom
+                         select p;
+            foreach (var p in result)
+                Console.WriteLine($"Óra: {p.Azon} Hőmérséklet: {p.Paratartalom}");
+        } //2. linq lekérdezés
+        static void LINQ_3() //3. linq lekérdezés
+        {
+            Console.ForegroundColor= ConsoleColor.Red;
+            Console.WriteLine("Az alábbi órákban nagyon magas szárazság volt");
+            Console.ResetColor();
+            var result = from s in list
+                         where 30<s.Homerseklet && 40>s.Paratartalom
+                         select s;
+            foreach (var s in result)
+                Console.WriteLine($"Óra: {s.Azon} Hőmérséklet: {s.Homerseklet} Páratartalom: {s.Paratartalom}");
+        }
         static void Main(string[] args)
         {
             Results();
             byte valasztas; //ez a változó a menürendszer kulcs eleme, ez lesz a fh. választsása
-            Console.WriteLine("Kérem válasszon az alábbi lehetőségek közül!\n\t1. A mérési adatok kiíratása egy JSON fájlba\n\t2. Mérőpontok kiíratása ahol a biztonságos szint fölé (50°C) ment a hőmérséklet\n\t3. (blank)\n\t4. (blank)\n\t0. Kilépés"); //
+            Console.WriteLine("Kérem válasszon az alábbi lehetőségek közül!\n\t1. A mérési adatok kiíratása egy JSON fájlba\n\t2. Az órák és a hozzájuk tartozó hőmérséklet kiíratása ahol narancssárga riasztás volt érvényben\n\t3. Az órák ahol minimum 60% volt a páratartalom\n\t4. (blank)\n\t0. Kilépés"); //
             do
             {
                 do //ellenőrzött beolvasás - ide esemény?
                 {
-                    Console.Write("Adja meg a választását az alábbi lehetőségek közül:");
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.Write("\nAdja meg a választását az alábbi lehetőségek közül:");
+                    Console.ResetColor();
                 } while (!byte.TryParse(Console.ReadLine(), out valasztas));
                 switch (valasztas) //switchekkel, menürendszer
                 {
@@ -90,21 +153,18 @@ namespace Beadando_Szenzorhalozat
                         break;
                     case 1:
                         JSON(); //JSON meghívása
-                        Console.WriteLine("Megtörtént a json fájlba írás...");
                         break;
                     case 2:
                         //LINQ_1 meghívása
                         LINQ_1();
                         break;
                     case 3:
-                        //linq2 - Átlagolja a hőmérsékleteket
-                        var atlag = list.Average(x => x.Homerseklet);
-                        Console.Write("A hőméréskletek átlaga:" + atlag + "\n");
+                        //LINQ_2 
+                        LINQ_2();
                         break;
                     case 4:
-                        //linq3
-
-                        Console.WriteLine("itt egy LINQ lekérdezés lesz");
+                        //LINQ_3
+                        LINQ_3();
                         break;
                     default:
                         Console.WriteLine("Ilyen sorszámú lehetőség nincs!");
