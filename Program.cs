@@ -40,21 +40,12 @@ namespace Beadando_Szenzorhalozat
     }
     internal class Program
     {
-        public static event EventHandler JSON_FILE;
-        static void OnFileWritten(EventArgs e)
-        {
-            // Eseménykezelő meghívása
-            JSON_FILE?.Invoke(null, e);
-        }
-        static void FileWrittenHandler(object sender, EventArgs e)
+        public delegate void JSONWriteHandler(EventArgs e);
+        public static JSONWriteHandler JSON_FILE;
+        static void FileWrittenHandler(EventArgs e) 
         {
             Console.WriteLine("A fájl sikeresen ki lett írva!");
-        }
-        static Program()
-        {
-            // Regisztráljuk az eseménykezelőt
-            JSON_FILE += FileWrittenHandler;
-        }
+        }//az eseményt kezelő metódus
         static List<Sensorok> list = new List<Sensorok>();
         static void Results()
         {
@@ -92,9 +83,8 @@ namespace Beadando_Szenzorhalozat
                 sw.WriteLine(json);
                 sw.Flush();
                 sw.Close();
-
-                // Ha sikerült a fájl írása, aktiváljuk az eseményt
-                OnFileWritten(EventArgs.Empty);
+                // Ha sikerült a fájl írása, aktiváljuk az eseményt a delegált hívásával
+                JSON_FILE?.Invoke(EventArgs.Empty);
             }
             catch (Exception ex)
             {
@@ -138,7 +128,7 @@ namespace Beadando_Szenzorhalozat
         {
             Results();
             byte valasztas; //ez a változó a menürendszer kulcs eleme, ez lesz a fh. választsása
-            Console.WriteLine("Kérem válasszon az alábbi lehetőségek közül!\n\t1. A mérési adatok kiíratása egy JSON fájlba\n\t2. Az órák és a hozzájuk tartozó hőmérséklet kiíratása ahol narancssárga riasztás volt érvényben\n\t3. Az órák ahol minimum 60% volt a páratartalom\n\t4. (blank)\n\t0. Kilépés"); //
+            Console.WriteLine("Kérem válasszon az alábbi lehetőségek közül!\n\t1. A mérési adatok kiíratása egy JSON fájlba\n\t2. Az órák ahol narancssárga riasztás volt érvényben\n\t3. Az órák, ahol minimum 60% volt a páratartalom\n\t4. Órák, amikor a legszárazabb időjárás volt\n\t0. Kilépés"); //
             do
             {
                 do //ellenőrzött beolvasás - ide esemény?
@@ -152,6 +142,7 @@ namespace Beadando_Szenzorhalozat
                     case 0: //Kilépés
                         break;
                     case 1:
+                        JSON_FILE += FileWrittenHandler;
                         JSON(); //JSON meghívása
                         break;
                     case 2:
@@ -159,11 +150,11 @@ namespace Beadando_Szenzorhalozat
                         LINQ_1();
                         break;
                     case 3:
-                        //LINQ_2 
+                        //LINQ_2 meghívása
                         LINQ_2();
                         break;
                     case 4:
-                        //LINQ_3
+                        //LINQ_3 meghívása
                         LINQ_3();
                         break;
                     default:
