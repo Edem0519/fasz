@@ -9,6 +9,7 @@ using System.Xml;
 
 namespace Beadando_Szenzorhalozat
 {
+//Hello
     class Sensorok
     {
         //privát adattagok az egységbezárás és az adatok védelme miatt
