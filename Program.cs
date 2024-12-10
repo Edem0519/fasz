@@ -3,13 +3,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using MySql.Data.MySqlClient;
 
 namespace Beadando_Szenzorhalozat
 {
-//Hello
+
     class Sensorok
     {
         //privát adattagok az egységbezárás és az adatok védelme miatt
@@ -163,6 +165,26 @@ namespace Beadando_Szenzorhalozat
                         break;
                 }
             } while (valasztas != 0);
+
+        }
+
+        public static void Adatbazis(string azon,int para, int hom, int folyoszint, int tartalyszint)//TZS
+        {
+            string kapcsolodas = "server=localhost;database=szenzorhalozat;user=root;password=root;";
+            using(var kapcsolo = new MySqlConnection(kapcsolodas))
+            {
+                kapcsolo.Open();
+                string query = "INSERT INTO szenzorhalozat (azon, para, hom, folyoszint, tartalyszint) Values (@azon,@para,@hom,@folyoszint,@tartalyszint)";
+
+                using (var parancsok = new MySqlCommand(query, kapcsolo))
+                {
+                    parancsok.Parameters.AddWithValue("@azon",azon);
+                    parancsok.Parameters.AddWithValue("@para",para);
+                    parancsok.Parameters.AddWithValue("@hom",hom);
+                    parancsok.Parameters.AddWithValue("@folyoszint",folyoszint);
+                    parancsok.Parameters.AddWithValue("@tartalyszint",tartalyszint);
+                }
+            }
         }
     }
 }
